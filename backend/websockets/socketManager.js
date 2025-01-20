@@ -8,7 +8,8 @@ class SocketManager {
     constructor(server) {
         this.io = new Server(server, {
             cors: {
-                origin: process.env.CLIENT_URL,
+                // origin: process.env.CLIENT_URL,
+                origin: "*",
                 methods: ["GET", "POST"]
             }
         });

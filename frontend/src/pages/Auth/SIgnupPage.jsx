@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signup } from '../../api/auth';
 import { useAlert } from '../../contexts/AlertContext';
+import { useLoading } from '../../contexts/LoadingContext';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -11,9 +12,11 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { showAlert } = useAlert();
+  const {showLoading, hideLoading} = useLoading();
   const navigate = useNavigate(); 
 
   const handleSignup = async (e) => {
+    showLoading("Signing in");
     e.preventDefault();
   
     if (password !== confirmPassword) {
@@ -28,6 +31,7 @@ const SignupPage = () => {
       const signupResponse = await signup({ email, name, password, confirmPassword });
       console.log("signup response ",signupResponse);
       if (signupResponse.status === "success") {
+        hideLoading();
         showAlert("Signup successful, please login", "success");
         setEmail('');
         setName('');
@@ -36,6 +40,7 @@ const SignupPage = () => {
         navigate('/login');
       }
     } catch (error) {
+      hideLoading();
       console.error("Signup error:", error);
       showAlert(error.response.data.error, "error");
     }

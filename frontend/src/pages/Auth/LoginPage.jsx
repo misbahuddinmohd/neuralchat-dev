@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { login } from '../../api/auth';
 import { useAlert } from '../../contexts/AlertContext';
 import { useNavigate } from 'react-router-dom';
+import { useLoading } from '../../contexts/LoadingContext';
 
 const LoginPage = () => {
   const [userID, setUserID] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { showAlert } = useAlert(); 
+  const {showLoading, hideLoading} = useLoading();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
+    showLoading("Loggin in");
     e.preventDefault();
     try {
       const userData = { email: userID, password };
@@ -18,6 +21,7 @@ const LoginPage = () => {
       console.log('Login response:', response);
 
       if(response.status === "success"){
+        hideLoading();
         showAlert('Login successful!', 'success'); // Show success alert
         console.log('Logged in successfully:', response);
         localStorage.setItem("userID", response.data.userID);
@@ -26,6 +30,7 @@ const LoginPage = () => {
       }
       
     } catch (error) {
+      hideLoading();
       showAlert('Login failed. Please check your credentials and try again.', 'error'); // Show error alert
       console.error('Login error:', error);
     }

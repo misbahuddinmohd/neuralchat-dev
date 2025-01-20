@@ -37,6 +37,7 @@ const express = require('express');
 const messageRoutes = require('./routes/messageRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const testRoutes = require('./routes/testRoutes');
 const morgan = require('morgan');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -45,7 +46,7 @@ const app = express();
 
 // IMPORTANT MIDDLEWARE
 app.use(cors({
-  origin: ['http://localhost:3000'],
+  origin: ['http://localhost:3000', 'https://neuralchat-frontend-prod.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
@@ -59,5 +60,6 @@ app.use(cookieParser());
 app.use('/api/v1/message', messageRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/', testRoutes);
 
 module.exports = app;

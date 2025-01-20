@@ -98,6 +98,7 @@ import SignupPage from './pages/Auth/SIgnupPage';
 import { AlertProvider } from './contexts/AlertContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { LoadingProvider } from './contexts/LoadingContext';
 
 const App = () => {
   return (
@@ -105,22 +106,24 @@ const App = () => {
       <AlertProvider>
         <UserProvider>
           <ChatProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <ConnectionsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/chat/:userID" element={
-                  <ProtectedRoute>
-                    <ChatPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-              </Routes>
-            </Router>
+            <LoadingProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <ConnectionsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/chat/:userID" element={
+                    <ProtectedRoute>
+                      <ChatPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                </Routes>
+              </Router>
+            </LoadingProvider>
           </ChatProvider>
         </UserProvider>
       </AlertProvider>
