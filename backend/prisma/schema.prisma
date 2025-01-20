@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// By default primsa consider each column not null
+
+/**
+ * CREATE TABLE Users (
+ * userID VARCHAR(50) UNIQUE,
+ * userName VARCHAR(50),
+ * userEmail VARCHAR(50) UNIQUE,
+ * userPassword TEXT NOTNULL
+ * );
+ */
+
+// Define the enum for MsgType
+enum MsgType {
+  text
+  drawing
+}
+
+// Define the Users model
+model Users {
+  userID           String     @id @unique
+  userName         String
+  userEmail        String     @unique
+  userPassword     String     @db.Text
+  messagesSent     Messages[] @relation("Sender")
+  messagesReceived Messages[] @relation("Receiver")
+}
+
+/**
+ * CREATE TYPE MsgType AS ENUM ('text', 'drawing');
+ * CREATE TABLE Messages (
+ * id INT SERIAL PRIMARY KEY NOT NULL,
+ * senderID INT NOT NULL,
+ * receiverID INT NOT NULL,
+ * messageType msgType NOT NULL,
+ * message TEXT NOT NULL,
+ * sentAt TIMESTAMP NOT NULL,
+ * FOREIGN KEY (senderID) REFERENCES Users(userID),
+ * FOREIGN KEY (receiverID) REFERENCES Users(userID),
+ * );
+ */
+
+// Define the Messages model
+model Messages {
+  id          Int      @id @default(autoincrement())
+  senderID    String
+  receiverID  String
+  messageType MsgType
+  message     String   @db.Text
+  sentAt      DateTime @default(now())
+
+  sender   Users @relation("Sender", fields: [senderID], references: [userID])
+  receiver Users @relation("Receiver", fields: [receiverID], references: [userID])
+}
