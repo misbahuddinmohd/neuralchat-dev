@@ -35,7 +35,8 @@ exports.verifyJWT = async (req, res) => {
 
 // Signup
 exports.signup = async (req, res) => {
-    const { email, name, password, confirmPassword } = req.body;
+    let { email, name, password, confirmPassword } = req.body;
+    email = email.toLowerCase();
 
     // Validate input
     if (!email || !name || !password || !confirmPassword) {
@@ -94,7 +95,8 @@ exports.signup = async (req, res) => {
 
 // Login 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = email.toLowerCase();
 
     // Validate input
     if (!email || !password) {

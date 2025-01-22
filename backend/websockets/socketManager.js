@@ -18,6 +18,35 @@ class SocketManager {
         this.initialize();
     }
 
+    async getUnreadCountForUser(receiverID, senderID) {
+        return await prisma.messages.count({
+            where: {
+                senderID: senderID,
+                receiverID: receiverID,
+                isRead: false
+            }
+        });
+    }
+
+    async getAllUnreadCounts(userID) {
+        // Get unread message counts grouped by sender
+        const unreadCounts = await prisma.messages.groupBy({
+            by: ['senderID'],
+            where: {
+                receiverID: userID,
+                isRead: false,
+            },
+            _count: {
+                id: true
+            }
+        });
+
+        return unreadCounts.reduce((acc, curr) => {
+            acc[curr.senderID] = curr._count.id;
+            return acc;
+        }, {});
+    }
+
     initialize() {
         this.io.on('connection', (socket) => {
             console.log('New client connected');
@@ -28,27 +57,60 @@ class SocketManager {
                 console.log(`User ${userID} authenticated`);
             });
 
-            // Handle new messages
             socket.on('send_message', async (messageData) => {
                 try {
-                    // Save message to database
                     const newMessage = await prisma.messages.create({
-                        data: messageData
+                        data: {
+                            ...messageData,
+                            isRead: false
+                        }
                     });
 
-                    // Get receiver's socket ID
                     const receiverSocketId = this.userSockets.get(messageData.receiverID);
                     
-                    // Emit to sender
+                    // Send message to both parties
                     socket.emit('message_sent', newMessage);
-
-                    // Emit to receiver if online
                     if (receiverSocketId) {
                         this.io.to(receiverSocketId).emit('receive_message', newMessage);
+                        
+                        // Update unread count for receiver
+                        const unreadCount = await this.getUnreadCountForUser(
+                            messageData.receiverID,
+                            messageData.senderID
+                        );
+                        this.io.to(receiverSocketId).emit('unread_count_update', {
+                            senderID: messageData.senderID,
+                            count: unreadCount
+                        });
                     }
                 } catch (error) {
                     console.error('Error handling message:', error);
                     socket.emit('message_error', { error: error.message });
+                }
+            });
+
+            socket.on('mark_messages_read', async ({ senderID, receiverID }) => {
+                try {
+                    // Mark messages as read
+                    await prisma.messages.updateMany({
+                        where: {
+                            senderID: senderID,
+                            receiverID: receiverID,
+                            isRead: false
+                        },
+                        data: {
+                            isRead: true
+                        }
+                    });
+
+                    // Update unread counts for the receiver
+                    const unreadCounts = await this.getAllUnreadCounts(receiverID);
+                    const receiverSocketId = this.userSockets.get(receiverID);
+                    if (receiverSocketId) {
+                        this.io.to(receiverSocketId).emit('unread_counts', unreadCounts);
+                    }
+                } catch (error) {
+                    console.error('Error marking messages as read:', error);
                 }
             });
 

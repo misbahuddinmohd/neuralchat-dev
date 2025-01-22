@@ -477,7 +477,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { getMessages } from '../api/messages';
 
-const SOCKET_URL = process.env.BASEURL || 'http://localhost:7000';
+const SOCKET_URL = process.env.REACT_APP_BASEURL || 'http://localhost:7000';
 const ChatContext = createContext();
 
 export const useChatContext = () => useContext(ChatContext);
@@ -486,6 +486,17 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({}); 
+
+  // Function to update read messages count
+  const updateReadMessagesCount = (secUserID) => {
+    if (socket) {
+      socket.emit('mark_messages_read', {
+        senderID: secUserID,
+        receiverID: localStorage.getItem('userID')
+      });
+    }
+  };
 
   // Initialize socket connection
   useEffect(() => {
@@ -515,6 +526,17 @@ export const ChatProvider = ({ children }) => {
       setMessages(prev => [...prev, drawing]);
     });
 
+    newSocket.on('unread_counts', (counts) => {
+      setUnreadCounts(counts);
+    });
+
+    newSocket.on('unread_count_update', ({ senderID, count }) => {
+      setUnreadCounts(prev => ({
+        ...prev,
+        [senderID]: count
+      }));
+    });
+
     return () => newSocket.close();
   }, []);
 
@@ -522,7 +544,11 @@ export const ChatProvider = ({ children }) => {
   const handleReceiveMessages = async (secUserID) => {
     try {
       const receivedMessages = await getMessages(secUserID);
+      console.log(receivedMessages.data);
       setMessages(receivedMessages.data);
+
+      // Mark messages as read when opening chat
+      updateReadMessagesCount(secUserID);
     } catch (error) {
       console.error('Failed to receive messages:', error);
     }
@@ -568,6 +594,8 @@ export const ChatProvider = ({ children }) => {
         handleSendText,
         handleSendDrawing,
         handleReceiveMessages,
+        updateReadMessagesCount, // Expose the function to the context
+        unreadCounts
       }}
     >
       {children}

@@ -71,8 +71,10 @@
 // export default ConnectionsPage;
 
 
+
+// src/pages/ConnectionsPage.jsx
 import React, { useState } from 'react';
-// import { useChatContext } from '../contexts/ChatContext';
+import { useChatContext } from '../contexts/ChatContext';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { MoreVertical, Settings, LogOut } from 'lucide-react';
@@ -80,34 +82,33 @@ import { logout } from '../api/auth';
 import { useAlert } from '../contexts/AlertContext';
 
 const ConnectionsPage = () => {
-  // const { connectedUsers, handleJoinChat } = useChatContext();
+  const { unreadCounts } = useChatContext();
   const { allUsers } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { showAlert } = useAlert(); 
   const navigate = useNavigate();
 
-  const filteredUsers = (allUsers || []).filter((user) =>
-    user.userName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter users based on search term
+  const filteredUsers = (allUsers || [])
+    .filter((user) =>
+      user.userName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (unreadCounts[b.userID] || 0) - (unreadCounts[a.userID] || 0)); // Sort by unread message count
 
   const handleUserClick = (userID) => {
     navigate(`/chat/${userID}`);
   };
 
   const handleLogout = async () => {
-    // Remove JWT token and other user data
-    
     try {
       await logout();
       showAlert("Logout successful", "success");
-    } catch (error){
+    } catch (error) {
       showAlert("Error Logging out, try later", "error");
     }
 
     localStorage.removeItem('userID');
-
-    // Navigate to login page
     navigate('/login');
   };
 
@@ -133,13 +134,13 @@ const ConnectionsPage = () => {
           {/* Dropdown Menu */}
           {isMenuOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
-              <button
+              {/* <button
                 onClick={handleSettings}
                 className="flex items-center w-full px-4 py-2 text-gray-100 hover:bg-gray-700 transition-colors"
               >
                 <Settings className="w-4 h-4 mr-3" />
                 Settings
-              </button>
+              </button> */}
               <button
                 onClick={handleLogout}
                 className="flex items-center w-full px-4 py-2 text-gray-100 hover:bg-gray-700 transition-colors"
@@ -170,14 +171,28 @@ const ConnectionsPage = () => {
             <div
               onClick={() => handleUserClick(user.userID)}
               key={user.userID}
-              className="flex items-center p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+              className="flex items-center justify-between p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
             >
-              <img
-                src={user.profilePic || 'https://via.placeholder.com/40'}
-                alt={user.userName}
-                className="w-10 h-10 rounded-full mr-4"
-              />
-              <span className="text-gray-100 font-mono">{user.userName}</span>
+              <div className="flex flex-col">
+                <div className="flex items-center">
+                  <img
+                    src={user.profilePic || '/user.png'}
+                    alt={user.userName}
+                    className="w-10 h-10 rounded-full mr-4"
+                  />
+                  <div>
+                    <span className="text-gray-100 font-mono">{user.userName}</span>
+                    <span className="block text-gray-400 text-sm font-mono">{`ID: ${user.userID}`}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Unread Messages Badge */}
+              {unreadCounts[user.userID] > 0 && (
+                <div className="bg-blue-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                  {unreadCounts[user.userID]}
+                </div>
+              )}
             </div>
           ))
         ) : (
