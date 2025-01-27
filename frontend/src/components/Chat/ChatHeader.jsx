@@ -1,3 +1,4 @@
+// src/components/Chat/ChatHeader.jsx
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
@@ -13,7 +14,7 @@ const ChatHeader = () => {
   const user = allUsers?.find((user) => user.userID === userID);
 
   return (
-    <div className="sticky top-0 z-10 p-4 bg-gray-800 border-b border-gray-700 flex items-center space-x-4">
+    <div className="sticky top-0 z-30 p-4 bg-gray-800 border-b border-gray-700 flex items-center space-x-4">
       {user ? (
         <>
         <button

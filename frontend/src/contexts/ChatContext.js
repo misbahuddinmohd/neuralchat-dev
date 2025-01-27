@@ -473,7 +473,7 @@
 
 
 // src/contexts/ChatContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { getMessages } from '../api/messages';
 
@@ -486,7 +486,13 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
-  const [unreadCounts, setUnreadCounts] = useState({}); 
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const lastMsgInfoRef = useRef(""); // useRef to track the last message's sentAt value
+
+
+  // useEffect(() => {
+  //   console.log("instance messages: ", messages)
+  // }, [messages]);
 
   // Function to update read messages count
   const updateReadMessagesCount = (secUserID) => {
@@ -541,7 +547,7 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   // Fetch message history
-  const handleReceiveMessages = async (secUserID) => {
+  const handleReceiveMessagesOld = async (secUserID) => {
     try {
       const receivedMessages = await getMessages(secUserID);
       console.log(receivedMessages.data);
@@ -554,6 +560,84 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  // Fetch message history
+  // const handleReceiveMessages = async (secUserID, loadMore = false) => {
+  //   try {
+  //     let cursor = "null";
+
+  //     // Only use the lastDateRef if we're loading more messages
+  //     if (loadMore && lastDateRef.current) {
+  //       cursor = new Date(lastDateRef.current).toISOString();
+  //     }
+  //     console.log("Cursor value:", cursor);
+
+  //     // Fetch messages from the API
+  //     const receivedMessages = await getMessages(secUserID, cursor);
+
+  //     if (receivedMessages.data) {
+  //       console.log("Received messages:", receivedMessages.data);
+  //       const newMessages = receivedMessages.data;
+
+  //       // Update lastDateRef with the sentAt of the last message in the batch
+  //       lastDateRef.current = newMessages[0]?.sentAt;
+
+  //       // Update messages state
+  //       if (loadMore) {
+  //         // Prepend new messages when loading more
+  //         setMessages(prevMessages => [
+  //           ...newMessages,
+  //           ...prevMessages
+
+  //         ]);
+  //       } else {
+  //         // Set new messages on initial load
+  //         setMessages(newMessages);
+  //       }
+  //     }
+  //     // Mark messages as read
+  //     updateReadMessagesCount(secUserID);
+  //   } catch (error) {
+  //     console.error("Failed to receive messages:", error);
+  //   }
+  // };
+  const handleReceiveMessages = async (secUserID, loadMore = false) => {
+    try {
+      let cursor = "null";
+      let lastMsgID = "null";
+  
+      if (loadMore && lastMsgInfoRef.current) {
+        cursor = new Date(lastMsgInfoRef.current.sentAt).toISOString();
+        lastMsgID = lastMsgInfoRef.current.id;
+      }
+  
+      const response = await getMessages(secUserID, cursor, lastMsgID);
+  
+      if (response.data) {
+        const newMessages = response.data;
+  
+        if (newMessages.length > 0) {
+          lastMsgInfoRef.current = newMessages[0];
+        }
+  
+        setMessages(prevMessages => {
+          if (loadMore) {
+            return [...newMessages, ...prevMessages];
+          } else {
+            return newMessages;
+          }
+        });
+  
+        updateReadMessagesCount(secUserID);
+      }
+  
+      return response; // Return the response object for `meta.hasMore`
+    } catch (error) {
+      console.error("Failed to receive messages:", error);
+      throw error; // Ensure errors propagate
+    }
+  };
+  
+ 
   // Send text message
   const handleSendText = async (text, receiverID) => {
     if (!text.trim() || !socket) return;

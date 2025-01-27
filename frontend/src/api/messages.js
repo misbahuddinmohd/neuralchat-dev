@@ -1,9 +1,9 @@
 // src/api/messages.js
 import Api from './Api';
 
-export const getMessages = async (secUserID) => {
+export const getMessages = async (secUserID, cursor = null, lastMsgID = false) => {
   try {
-    const response = await Api.get(`/api/v1/message/getMessages/${secUserID}`);
+    const response = await Api.get(`/api/v1/message/getMessages/${secUserID}?cursor=${cursor}&lastMsgID=${lastMsgID}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching messages:', error);

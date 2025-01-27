@@ -328,7 +328,7 @@
 // export default DrawingCanvas;
 
 
-
+// src/components/Canvas/DrawingCanvas.jsx
 import React, { useRef, useState, useEffect } from 'react';
 import { Eraser } from 'lucide-react';
 import { useChatContext } from '../../contexts/ChatContext';
@@ -431,7 +431,7 @@ const DrawingCanvas = () => {
     <>
       {isCanvasOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 overflow-y-auto z-50"
           onTouchMove={(e) => e.preventDefault()} // Prevent page scrolling on touch
         >
           <div className="bg-gray-800 p-4 rounded-lg">
@@ -450,7 +450,7 @@ const DrawingCanvas = () => {
                 draw(e);
               }}
               onTouchEnd={stopDrawing}
-              className="bg-gray-900 rounded-lg cursor-crosshair touch-none"
+              className="bg-gray-900 rounded-lg cursor-crosshair touch-none max-w-full max-h-full"
             />
             <div className="flex justify-between mt-4">
               <button
@@ -482,4 +482,3 @@ const DrawingCanvas = () => {
 };
 
 export default DrawingCanvas;
-        
